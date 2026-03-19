@@ -1,0 +1,25 @@
+.viewer {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background: white; /* Overwritten by style prop if changed */
+}
+
+pre#ascii {
+    white-space: pre;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-origin: center;
+    font-size: 14px;
+    margin: 0;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+pre#ascii:active {
+    cursor: grabbing !important;
+}

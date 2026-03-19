@@ -1,0 +1,49 @@
+.control-group {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.control-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #666;
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+}
+
+.color-grid {
+    display: flex;
+    gap: 8px;
+}
+
+.color-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.color-item span {
+    font-size: 11px;
+    color: #666;
+}
+
+input[type="color"] {
+    width: 100%;
+    height: 40px;
+    padding: 4px;
+    cursor: pointer;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: white;
+    transition: all 0.15s;
+    box-sizing: border-box;
+}
+
+input[type="color"]:focus {
+    outline: none;
+    border-color: #999;
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.05);
+}

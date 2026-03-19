@@ -1,0 +1,56 @@
+/* Leverages shared control-group from App/Global, but we scope specific styles here if needed */
+.control-group {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.control-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.control-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #666;
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 13px;
+    background: white;
+    transition: all 0.15s;
+    box-sizing: border-box;
+}
+
+input[type="text"]:focus {
+    outline: none;
+    border-color: #999;
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.05);
+}
+
+.small-btn {
+    width: 100%;
+    margin-top: 6px;
+    background: #f0f0f0;
+    font-size: 12px;
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.15s;
+    box-sizing: border-box;
+}
+
+.small-btn:hover {
+    background: #e4e4e4;
+    border-color: #ccc;
+}

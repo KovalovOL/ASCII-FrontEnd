@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ASCII Viewer</title>
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: #111;
+}
+
+/* Проста панель */
+#controls {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    color: #222;
+    padding: 12px;
+    border-radius: 14px;
+    width: 260px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    border: 1px solid rgba(0,0,0,0.05);
+    transition: all 0.2s;
+}
+
+#controls.collapsed {
+    width: auto;
+    background: white;
+}
+
+#controls.collapsed #panel {
+    display: none;
+}
+
+/* Міні-панель масштабу при схованій панелі */
+#miniZoom {
+    display: none;
+    position: fixed;
+    top: 80px;
+    left: 12px;
+    z-index: 1001;
+    background: white;
+    padding: 10px 15px;
+    border-radius: 30px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    border: 1px solid #eee;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+#controls.collapsed + #miniZoom {
+    display: flex;
+}
+
+#miniZoom span {
+    color: #666;
+    font-weight: 500;
+}
+
+#miniZoom input {
+    width: 150px;
+    margin: 0 5px;
+}
+
+#miniZoomValue {
+    min-width: 45px;
+    text-align: center;
+    color: #333;
+    font-weight: 600;
+}
+
+#toggle {
+    width: 100%;
+    padding: 8px;
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    color: #333;
+    margin-bottom: 0;
+    transition: all 0.2s;
+}
+
+#toggle:hover {
+    background: #f5f5f5;
+    border-color: #aaa;
+}
+
+#panel {
+    margin-top: 12px;
+}
+
+/* Групи елементів */
+.control-group {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.control-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.control-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #666;
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+}
+
+/* Інпути */
+input, select, button {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 13px;
+    background: white;
+    transition: all 0.15s;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #999;
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.05);
+}
+
+button {
+    background: #f8f8f8;
+    cursor: pointer;
+    font-weight: 500;
+    border: 1px solid #ddd;
+}
+
+button:hover {
+    background: #f0f0f0;
+    border-color: #ccc;
+}
+
+/* Слайдери */
+input[type=range] {
+    padding: 0;
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 10px;
+    -webkit-appearance: none;
+}
+
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #333;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+/* Color inputs */
+input[type=color] {
+    height: 40px;
+    padding: 4px;
+    cursor: pointer;
+}
+
+/* Сітка для кольорів */
+.color-grid {
+    display: flex;
+    gap: 8px;
+}
+
+.color-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.color-item span {
+    font-size: 11px;
+    color: #666;
+}
+
+.color-item input {
+    width: 100%;
+}
+
+/* Viewer */
+#viewer {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background: white;
+}
+
+#ascii {
+    white-space: pre;
+    transform-origin: center;
+    cursor: grab;
+    font-size: 14px;
+    color: black;
+    font-family: 'Courier New', Courier, monospace;
+    line-height: 1;
+    letter-spacing: 0px;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#ascii:active {
+    cursor: grabbing;
+}
+
+/* Значення слайдерів */
+.slider-value {
+    display: inline-block;
+    background: #f0f0f0;
+    padding: 2px 6px;
+    border-radius: 20px;
+    font-size: 11px;
+    margin-left: 6px;
+    color: #555;
+}
+
+.slider-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.slider-container input {
+    flex: 1;
+}
+
+/* Кнопка інвертування */
+.small-btn {
+    margin-top: 6px;
+    background: #f0f0f0;
+    font-size: 12px;
+    padding: 6px;
+}
+
+/* Інформація */
+.file-info {
+    font-size: 11px;
+    color: #888;
+    margin-top: 4px;
+    text-align: center;
+}
+</style>
+</head>
+<body>
+
+<div id="controls">
+    <button id="toggle">☰ Control panel</button>
+    <div id="panel">
+        
+        <!-- Зображення -->
+        <div class="control-group">
+            <div class="control-label">Image</div>
+            <input type="file" id="image" accept="image/*">
+            <div class="file-info" id="fileInfo"></div>
+        </div>
+
+        <!-- Палітра -->
+        <div class="control-group">
+            <div class="control-label">Chars Pool</div>
+            <input type="text" id="palette" value="$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/|()1{}[]?-_+~<>i!lI;:,^`'. ">
+            <button class="small-btn" id="invertPalette">Invert chars</button>
+        </div>
+
+        <!-- Масштаб -->
+        <div class="control-group">
+            <div class="control-label">Scale <span class="slider-value" id="zoomValue">1.00x</span></div>
+            <div class="slider-container">
+                <input type="range" id="zoom" min="0.001" max="1" step="0.0002" value="0.5">
+            </div>
+        </div>
+
+        <!-- Інтервали -->
+        <div class="control-group">
+            <div style="font-size:12px; margin-bottom:4px;">Char Space <span id="charSpaceValue">0px</span></div>
+            <input type="range" id="charSpace" min="-5.5" max="5" step="0.2" value="0">
+            
+            <div style="font-size:12px; margin:8px 0 4px;">Line Space <span id="lineSpaceValue">1.0</span></div>
+            <input type="range" id="lineSpace" min="0.3" max="2" step="0.01" value="1">
+        </div>
+
+        <!-- Кольори -->
+        <div class="control-group">
+            <div class="control-label">Colors</div>
+            <div class="color-grid">
+                <div class="color-item">
+                    <span>Text</span>
+                    <input type="color" id="textColor" value="#000000">
+                </div>
+                <div class="color-item">
+                    <span>Background</span>
+                    <input type="color" id="bgColor" value="#ffffff">
+                </div>
+            </div>
+        </div>
+
+        <!-- Шрифт (тільки monospace) -->
+        <div class="control-group">
+            <div class="control-label">Fonts</div>
+            <select id="font">
+                <option value="Courier New, Courier, monospace">Courier New</option>
+                <option value="Consolas, monospace" selected>Consolas</option>
+                <option value="Monaco, monospace">Monaco</option>
+                <option value="Menlo, monospace">Menlo</option>
+                <option value="Ubuntu Mono, monospace">Ubuntu Mono</option>
+            </select>
+        </div>
+
+        <!-- Кнопка генерації -->
+        <button id="generate">Genarate ASCII</button>
+    </div>
+</div>
+
+<!-- Міні-панель масштабу -->
+<div id="miniZoom">
+    <span></span>
+    <input type="range" id="miniZoomSlider" min="0.03" max="1" step="0.01" value="0.2">
+    <span id="miniZoomValue">1.00x</span>
+</div>
+
+<div id="viewer">
+    <pre id="ascii"></pre>
+</div>
+
+<script>
+const ascii = document.getElementById("ascii")
+const viewer = document.getElementById("viewer")
+const imageInput = document.getElementById("image")
+const paletteInput = document.getElementById("palette")
+const fileInfo = document.getElementById("fileInfo")
+
+// Елементи масштабу
+const zoomSlider = document.getElementById("zoom")
+const miniZoomSlider = document.getElementById("miniZoomSlider")
+const zoomValue = document.getElementById("zoomValue")
+const miniZoomValue = document.getElementById("miniZoomValue")
+
+let scale = 1
+let offsetX = 0
+let offsetY = 0
+
+// Встановлюємо кольори за замовчуванням
+ascii.style.color = "#000000"
+viewer.style.background = "#ffffff"
+
+function updateTransform() {
+    ascii.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`
+}
+
+// Функція оновлення масштабу
+function updateScale(newScale) {
+    scale = Math.min(Math.max(newScale, 0.03), 3)
+    
+    // Оновлюємо всі слайдери і значення
+    zoomSlider.value = scale
+    miniZoomSlider.value = scale
+    zoomValue.textContent = scale.toFixed(2) + 'x'
+    miniZoomValue.textContent = scale.toFixed(2) + 'x'
+    
+    updateTransform()
+}
+
+// Синхронізація слайдерів масштабу
+zoomSlider.addEventListener("input", (e) => {
+    updateScale(parseFloat(e.target.value))
+})
+
+miniZoomSlider.addEventListener("input", (e) => {
+    updateScale(parseFloat(e.target.value))
+})
+
+// Оновлення відображення інших слайдерів
+document.getElementById("charSpace").addEventListener("input", (e) => {
+    ascii.style.letterSpacing = e.target.value + "px"
+    document.getElementById("charSpaceValue").textContent = e.target.value + 'px'
+})
+
+document.getElementById("lineSpace").addEventListener("input", (e) => {
+    ascii.style.lineHeight = e.target.value
+    document.getElementById("lineSpaceValue").textContent = e.target.value
+})
+
+// Інформація про файл
+imageInput.addEventListener("change", (e) => {
+    if (e.target.files[0]) {
+        const file = e.target.files[0]
+        const size = (file.size / 1024).toFixed(1)
+        fileInfo.textContent = `${file.name} (${size} KB)`
+        generateAscii()
+    } else {
+        fileInfo.textContent = ''
+    }
+})
+
+// Генерація ASCII
+async function generateAscii() {
+    const file = imageInput.files[0]
+    const palette = paletteInput.value
+
+    if (!file) {
+        alert("Виберіть зображення")
+        return
+    }
+
+    try {
+        const form = new FormData()
+        form.append("image", file)
+        form.append("palette", palette)
+
+        const res = await fetch("http://localhost:8080/pixelart", {
+            method: "POST",
+            body: form
+        })
+
+        if (!res.ok) {
+            throw new Error("Помилка сервера: " + res.status)
+        }
+
+        const text = await res.text()
+        ascii.textContent = text
+
+        // Автоматичне масштабування
+        setTimeout(adjustZoomToFit, 100)
+        
+        // Скидаємо позицію
+        offsetX = 0
+        offsetY = 0
+        updateTransform()
+
+    } catch (err) {
+        console.error(err)
+        alert("Не вдалося згенерувати ASCII: " + err.message)
+    }
+}
+
+// Автоматичне масштабування під розмір вікна
+function adjustZoomToFit() {
+    if (!ascii.textContent) return
+    
+    // Тимчасово скидаємо трансформацію для вимірювання
+    const currentTransform = ascii.style.transform
+    ascii.style.transform = 'none'
+    
+    const rect = ascii.getBoundingClientRect()
+    const windowWidth = window.innerWidth * 0.9
+    const windowHeight = window.innerHeight * 0.9
+    
+    // Розраховуємо оптимальний масштаб
+    const scaleX = windowWidth / rect.width
+    const scaleY = windowHeight / rect.height
+    const newScale = Math.min(scaleX, scaleY, 2)
+    
+    // Встановлюємо новий масштаб
+    updateScale(Math.min(Math.max(newScale, 0.03), 3))
+    
+    // Відновлюємо трансформацію
+    ascii.style.transform = currentTransform
+}
+
+// Кнопка генерації
+document.getElementById("generate").onclick = generateAscii
+
+// Інвертування палітри
+document.getElementById("invertPalette").onclick = () => {
+    paletteInput.value = paletteInput.value.split("").reverse().join("")
+}
+
+// Кольори
+document.getElementById("textColor").oninput = (e) => {
+    ascii.style.color = e.target.value
+}
+
+document.getElementById("bgColor").oninput = (e) => {
+    viewer.style.background = e.target.value
+}
+
+// Шрифт
+document.getElementById("font").onchange = (e) => {
+    ascii.style.fontFamily = e.target.value
+}
+
+// Панель
+const controls = document.getElementById("controls")
+document.getElementById("toggle").onclick = () => {
+    controls.classList.toggle("collapsed")
+}
+
+// Drag
+let dragging = false
+let lastX = 0
+let lastY = 0
+
+ascii.addEventListener("mousedown", (e) => {
+    dragging = true
+    lastX = e.clientX
+    lastY = e.clientY
+})
+
+window.addEventListener("mouseup", () => {
+    dragging = false
+})
+
+window.addEventListener("mousemove", (e) => {
+    if (!dragging) return
+
+    offsetX += e.clientX - lastX
+    offsetY += e.clientY - lastY
+
+    lastX = e.clientX
+    lastY = e.clientY
+
+    updateTransform()
+})
+
+// Маштабування колесиком
+viewer.addEventListener("wheel", (e) => {
+    e.preventDefault()
+    
+    const delta = e.deltaY > 0 ? -0.05 : 0.05
+    updateScale(scale + delta)
+})
+
+ascii.addEventListener("dblclick", () => {
+    offsetX = 0
+    offsetY = 0
+    updateTransform()
+})
+
+window.addEventListener("keydown", (e) => {
+    if (e.ctrlKey && e.key === '0') {
+        e.preventDefault()
+        updateScale(1)
+    }
+})
+
+window.addEventListener("load", () => {
+    ascii.textContent = `Choose image to generate ASCII art
+    
+    Example:
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣤⣄⡀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡸⠋⠀⠘⣇⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⠇⠀⠀⠀⢸⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡜⠀⠀⠀⠀⢸⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⠇⠀⠀⠀⠀⢸⠇⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡎⠀⠀⠀⠀⠀⢸⠀⠀⠀
+⠀⠀⢀⣀⣀⣀⠀⠀⠀⠀⠀⢀⣀⣤⡤⠤⠤⠤⠤⢤⣤⣀⡤⢖⡿⠛⠉⢳⠀⠀⠀⠀⠀⢸⠀⠀⠀
+⠀⢼⠁⠉⠉⠛⠻⢭⡓⠒⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠰⣏⠀⠀⠀⢸⠀⠀⠀⠀⠀⡤⠀⠀⠀
+⠀⠸⡄⠀⠀⠀⠀⢸⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠂⠀⠀⡜⠀⠀⠀⠀⢀⡇⠀⠀⠀
+⠀⠀⢷⠀⠀⠀⠠⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢣⢠⠏⠀⠀⠀⠀⢸⠃⠀⠀⠀
+⠀⠀⠈⢧⠀⢀⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡞⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀
+⠀⠀⠀⠈⢳⡈⠁⠀⠀⠀⠀⠀⣀⡀⠀⠀⠀⠀⠀⠀⠀⣶⣶⣦⠀⠀⢹⠀⠀⠀⠀⠀⡎⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⢠⣾⣟⣹⡄⠀⠀⠀⠀⡀⠀⣿⣿⣿⡇⠀⢈⣧⠤⠤⠶⠶⢷⠒⠒⠂⠀
+⠀⠀⢀⣀⣠⡧⠄⠀⠀⠀⣾⣿⣿⣿⠇⠀⠀⠀⠙⠁⠀⠙⠻⠿⠃⠀⠨⣼⣤⣀⡀⠀⠈⢧⠀⠀⠀
+⠘⠉⠁⠀⢸⣤⡤⠀⠀⠀⠛⢿⡿⠋⠀⠀⠀⠀⠴⠦⠀⠀⠀⠀⠀⠐⣲⣯⡀⠀⠈⠙⠓⠺⣧⣄⡀
+⠀⣀⡤⠚⠉⢳⡴⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡼⠃⠀⠈⠓⢦⡀⠀⠀⢸⠀⠈
+⠀⠁⠀⢀⡔⠉⠙⡶⢄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠴⠚⠁⠀⠀⠀⠀⠀⠀⠈⠓⠆⠀⡇⠀
+⠀⠀⠰⠋⠀⠀⢸⡇⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠁⠀
+⠀⠀⠀⠀⠀⠀⠈⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡎⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠹⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠙⢆⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠄⠀⢰⠇⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠹⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⠶⠺⣇⠀⣀⡜⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢱⡄⠀⠀⠀⠹⡟⠒⢢⡀⠀⠀⠀⠀⢀⡏⠀⠀⠀⠈⠉⠉⠁⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠹⣄⠀⠀⢀⡇⠀⠀⠻⣄⠀⠀⠀⡸⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢷⠶⠋⠀⠀⠀⠀⠈⣣⠶⠖⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+    
+    Upload iamge and press Generate`
+})
+</script>
+</body>
+</html>
