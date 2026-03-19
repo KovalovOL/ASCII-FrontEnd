@@ -23,7 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 
-.vscode/
 .idea/
-.DS_Store
 .env
