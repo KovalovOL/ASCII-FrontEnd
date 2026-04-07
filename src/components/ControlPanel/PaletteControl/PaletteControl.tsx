@@ -3,9 +3,9 @@ import { useAsciiStore } from '../../../store/useAsciiStore';
 import './PaletteControl.css';
 
 const PRESETS = [
-  { label: 'Standard', value: "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/|()1{}[]?-_+~<>i!lI;:,^`'. " },
-  { label: 'Minimal', value: "@%#*+=-:. " },
-  { label: 'Very minimal', value: "@%*-:. " },
+  { label: 'Extended', value: "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/|()1{}[]?-_+~<>i!lI;:,^`'. " },
+  { label: 'Standart', value: "@%#*+=-:. " },
+  { label: 'Minimal', value: "@%*-:. " },
   { label: 'Binary', value: "01 " },
   { label: 'Letters', value: " WMNHQOUKXAVCJYLTFz7vli{}:\"., " }
 ];

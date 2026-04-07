@@ -49,7 +49,7 @@ interface AsciiState {
 
 export const useAsciiStore = create<AsciiState>((set, get) => ({
   // Config defaults
-  palette: "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/|()1{}[]?-_+~<>i!lI;:,^`'. ",
+  palette: "@%#*+=-:. ",
   charSpace: 0,
   lineSpace: 1.0,
   textColor: '#000000',
