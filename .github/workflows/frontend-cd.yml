@@ -36,6 +36,6 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd /opt/ASCII-Infra
-            docker compose pull front
-            docker compose up -d front
+            docker compose pull frontend
+            docker compose up -d frontend
             docker image prune -f
