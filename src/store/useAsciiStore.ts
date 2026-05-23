@@ -143,7 +143,7 @@ export const useAsciiStore = create<AsciiState>((set, get) => ({
       form.append("palette", palette);
       form.append("scale", imageScale.toString());
 
-      const res = await fetch(import.meta.env.ASCII_API_URL || "https://ascii-art.space/api/pixelart", {
+      const res = await fetch("https://ascii-art.space/pixelart", {
         method: "POST",
         body: form
       });

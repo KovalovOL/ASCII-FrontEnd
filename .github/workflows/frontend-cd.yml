@@ -1,41 +1,56 @@
-name: Frontend CI/CD
+name: Deploy Frontend to VPC
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/ascii-front:latest
-
   deploy:
     runs-on: ubuntu-latest
-    needs: build-and-push
+
     steps:
-      - name: Deploy to VPS via SSH
-        uses: appleboy/ssh-action@master
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: SSH and Deploy to VPC
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
+          port: 22
           script: |
-            cd /opt/ASCII-Infra
-            docker compose pull frontend
-            docker compose up -d frontend
+            set -e
+
+            cd /opt
+
+            if [ ! -d "ASCII-FrontEnd" ]; then
+              echo "Cloning repository..."
+              git clone https://github.com/KovalovOL/ASCII-FrontEnd.git
+              cd ASCII-FrontEnd
+            else
+              echo "Repository exists. Pulling latest changes..."
+              cd ASCII-FrontEnd
+              git pull origin main
+            fi
+
+            echo "Rebuilding and deploying containers..."
+            docker build -t ascii-front .
+            docker stop ascii-front || true
+            docker rm ascii-back || true
+
+            docker run -d \
+              --name ascii-back \
+              --network traefik-public \
+              --restart unless-stopped \
+              --label traefik.enable=true \
+              --label traefik.docker.network=traefik-public \
+              --label traefik.http.routers.ascii-back.rule="Host(\`ascii-art.space\`)" \
+              --label traefik.http.routers.ascii-back.entrypoints=websecure \
+              --label traefik.http.routers.ascii-back.tls=true \
+              --label traefik.http.routers.ascii-back.tls.certresolver=myresolver \
+              --label traefik.http.services.ascii-back.loadbalancer.server.port=8081 \
+              ascii-back
+
             docker image prune -f
