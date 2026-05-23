@@ -36,22 +36,5 @@ jobs:
             fi
 
             echo "Rebuilding and deploying containers..."
-            docker build -t ascii-front .
-            docker stop ascii-front || true
-            docker rm ascii-front || true
-
-            docker run -d \
-              --name ascii-front \
-              --network traefik-public \
-              --restart unless-stopped \
-              --label traefik.enable=true \
-              --label traefik.docker.network=traefik-public \
-              --label traefik.http.routers.ascii-front.rule="Host(\`ascii-art.space\`)" \
-              --label traefik.http.routers.ascii-front.priority=1 \
-              --label traefik.http.routers.ascii-front.entrypoints=websecure \
-              --label traefik.http.routers.ascii-front.tls=true \
-              --label traefik.http.routers.ascii-front.tls.certresolver=myresolver \
-              --label traefik.http.services.ascii-front.loadbalancer.server.port=80 \
-              ascii-front
-
+            docker compose up -d --build
             docker image prune -f
