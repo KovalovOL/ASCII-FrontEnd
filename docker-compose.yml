@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: ascii-front:latest
     container_name: ascii-front
     restart: unless-stopped
     networks:
